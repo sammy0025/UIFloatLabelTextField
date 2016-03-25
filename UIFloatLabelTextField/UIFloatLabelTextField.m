@@ -256,7 +256,7 @@
 - (void)toggleFloatLabelProperties:(UIFloatLabelAnimationType)animationType
 {
     _floatLabel.alpha = (animationType == UIFloatLabelAnimationTypeShow) ? 1.0f : 0.0f;
-    CGFloat yOrigin = (animationType == UIFloatLabelAnimationTypeShow) ? 5.0f : 0.5f * CGRectGetHeight([self frame]);
+    CGFloat yOrigin = (animationType == UIFloatLabelAnimationTypeShow) ? -2.0f : 0.5f * CGRectGetHeight([self frame]);
     _floatLabel.frame = CGRectMake(_xOrigin,
                                    yOrigin,
                                    CGRectGetWidth([_floatLabel frame]),
