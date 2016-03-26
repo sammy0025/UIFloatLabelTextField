@@ -8,11 +8,16 @@
 
 #import "UIFloatLabelTextField.h"
 
+IB_DESIGNABLE
 @interface UIFloatLabelTextField ()
 
 @property (nonatomic, copy) NSString *storedText;
 @property (nonatomic, strong) UIButton *clearTextFieldButton;
 @property (nonatomic, assign) CGFloat xOrigin;
+
+@property (nonatomic) IBInspectable UIColor *borderColor;
+@property (nonatomic) IBInspectable CGFloat cornerRadius;
+@property (nonatomic) IBInspectable CGFloat borderWidth;
 
 @end
 
@@ -77,13 +82,24 @@
 - (void)setupTextField
 {
     // Textfield Padding
-    _horizontalPadding = 5.0f;
+    _horizontalPadding = 10.0f;
     
     // Text Alignment
     [self setTextAlignment:NSTextAlignmentLeft];
     
     // Enable clearButton when textField becomes firstResponder
     self.clearButtonMode = UITextFieldViewModeWhileEditing;
+    
+    // Setup default values
+    _borderColor = [UIColor colorWithRed:213.0f/255.0f green:221.0f/255.0f blue:224.0f/255.0f alpha:1];
+    _cornerRadius = 2.0f;
+    _borderWidth = 1;
+    
+    // Enable textfield border
+    self.layer.cornerRadius = _cornerRadius;
+    self.layer.borderColor = _borderColor.CGColor;
+    self.layer.borderWidth = _borderWidth;
+    self.layer.masksToBounds = NO;
     
     /*
      Observer for replicating `textField:shouldChangeCharactersInRange:replacementString:` UITextFieldDelegate method,
@@ -127,12 +143,12 @@
     _floatLabel.textColor = [UIColor blackColor];
     _floatLabel.font =[UIFont boldSystemFontOfSize:12.0f];
     _floatLabel.alpha = 0.0f;
-    [_floatLabel setCenter:CGPointMake(_xOrigin, 0.0f)];
+    [_floatLabel setCenter:CGPointMake(_xOrigin - 5.0f, 0.0f)];
     [self addSubview:_floatLabel];
     
     // colors
     _floatLabelPassiveColor = [UIColor lightGrayColor];
-    _floatLabelActiveColor = [UIColor blueColor];
+    _floatLabelActiveColor = [UIColor colorWithRed:0 green:0.48f blue:1 alpha:1];
     
     // animationDuration
     _floatLabelShowAnimationDuration = @0.25f;
@@ -173,37 +189,10 @@
                      completion:nil];
 }
 
-- (void)animateClearingTextFieldWithArray:(NSTimer *)timer
-{
-    // Reference textArray from NSTimer object
-    NSMutableArray *textArray = [timer userInfo];
-    
-    /*
-     Remove last letter (e.g., last object in array) per method call,
-     and display updated/truncated textField text.
-     */
-    if ([textArray count]) {
-        [textArray removeLastObject];
-        NSString *csvString = [textArray componentsJoinedByString:@","];
-        _storedText = [csvString stringByReplacingOccurrencesOfString:@"," withString:@""];
-        self.text = _storedText;
-    } else {
-        _storedText = nil;
-        [[UIApplication sharedApplication] endIgnoringInteractionEvents];
-        [timer invalidate];
-        [self toggleFloatLabel:UIFloatLabelAnimationTypeHide];
-        
-        if ([_dismissKeyboardWhenClearingTextField boolValue]) {
-            [self resignFirstResponder];
-        }
-    }
-}
-
 #pragma mark - Helpers
 - (UIEdgeInsets)floatLabelInsets
 {
-    CGFloat top = [self.text length] ? 5.0f : 0.0f;
-    return UIEdgeInsetsMake(top, _horizontalPadding, 0.0f, _horizontalPadding);
+    return UIEdgeInsetsMake(0.0f, _horizontalPadding, 0.0f, _horizontalPadding);
 }
 
 - (void)textDidChange:(NSNotification *)notification
@@ -232,32 +221,19 @@
             return;
         }
     }
-    
-    // Create array, where each index contains one character from textField
-    NSMutableArray *textArray = [@[] mutableCopy];
-    NSUInteger i = 0;
-    while (i < [_storedText length]) {
-        NSString *character = [_storedText substringWithRange:NSMakeRange(i, 1)];
-        [textArray addObject:character];
-        ++i;
+
+    self.text = @"";
+    [self toggleFloatLabel:UIFloatLabelAnimationTypeHide];
+    if ([_dismissKeyboardWhenClearingTextField boolValue]) {
+        [self resignFirstResponder];
     }
-    
-    // Reset text before animation
-    self.text = _storedText;
-    
-    // Calculate duraiton based on _floatLabelAnimationDuration and number letters in textField
-    CGFloat duration = [_floatLabelHideAnimationDuration floatValue] / [textArray count];
-    
-    // Perform animation
-    [[UIApplication sharedApplication] beginIgnoringInteractionEvents];
-    [NSTimer scheduledTimerWithTimeInterval:duration target:self selector:@selector(animateClearingTextFieldWithArray:) userInfo:textArray repeats:YES];
 }
 
 - (void)toggleFloatLabelProperties:(UIFloatLabelAnimationType)animationType
 {
     _floatLabel.alpha = (animationType == UIFloatLabelAnimationTypeShow) ? 1.0f : 0.0f;
-    CGFloat yOrigin = (animationType == UIFloatLabelAnimationTypeShow) ? -2.0f : 0.5f * CGRectGetHeight([self frame]);
-    _floatLabel.frame = CGRectMake(_xOrigin,
+    CGFloat yOrigin = (animationType == UIFloatLabelAnimationTypeShow) ? -16.0f : 0.5f * CGRectGetHeight([self frame]);
+    _floatLabel.frame = CGRectMake(_xOrigin - 5.0f,
                                    yOrigin,
                                    CGRectGetWidth([_floatLabel frame]),
                                    CGRectGetHeight([_floatLabel frame]));
